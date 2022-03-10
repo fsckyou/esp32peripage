@@ -15,15 +15,17 @@
 #ifdef ARDUINO_M5Stack_Core_ESP32
 #include <M5Stack.h>
 #endif
-#include <SocketIOclient.h>
+#include <ArduinoWebsockets.h>
+#include "fragments.h"
 
 #define HOST "littleprinter.nordprojects.co"
 #define URL "/api/v1/connection"
+#define DEVICE_ADDR "f10f72c61eb3130a"
 
-SocketIOclient socketIO;
+websockets::WebsocketsClient client;
 
 void setup();
 void loop();
-void webSocketEvent(WStype_t, uint8_t *, size_t);
-
+void onMessageCallback(websockets::WebsocketsMessage);
+void onEventsCallback(websockets::WebsocketsEvent, String);
 #endif

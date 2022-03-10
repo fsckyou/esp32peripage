@@ -1,68 +1,82 @@
 #include "main.h"
 
+// holds a random bridge address... the value doesn't seem to matter much.
+uint64_t bridge_addr;
+// holds the encryption key... but we don't use it?
+String enc_key;
+
 void setup()
 {
 #ifdef ARDUINO_M5Stack_Core_ESP32
-  // This is M5 specific and important.
-  M5.begin();
-  M5.Power.begin();
+    // This is M5 specific and important.
+    M5.begin();
+    M5.Power.begin();
 #endif
 
-  // Use Serial if not using an M5 Core.
-  Serial.begin(9600);
-  delay(200);
+    // Use Serial if not using an M5 Core.
+    Serial.begin(9600);
+    delay(200);
 
-  connect_or_config();
+    connect_or_config();
 
-  ///////////////////////////////////////////////////////////
-  // Connected to wifi now
-  ///////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////
+    // Connected to wifi now
+    ///////////////////////////////////////////////////////////
 
-  // scan for a printer
-  // connect the printer
-  // set the power off timeout
-  
-  // connect the websocket
- // server address, port and URL
-    socketIO.begin(HOST,80,URL);
+    // scan for a printer
+    // connect the printer
+    // set the power off timeout
 
-    // event handler
-    socketIO.onEvent(socketIOEvent);
+    // run callback when messages are received
+    client.onMessage(onMessageCallback);
+
+    // run callback when events are occuring
+    client.onEvent(onEventsCallback);
+
+    // connect the websocket
+    // server address, port and URL
+    client.connect(HOST, 80, URL);
+
+    // generate the 64 bit bridge address
+    uint64_t upper_addr = esp_random();
+    uint64_t lower_addr = esp_random();
+    bridge_addr = upper_addr << 32 | lower_addr;
+}
 
 void loop()
 {
-  webSocket.loop();
+    client.poll();
+    delay(500);
 }
 
-void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length) {
-    switch(type) {
-        case sIOtype_DISCONNECT:
-            USE_SERIAL.printf("[IOc] Disconnected!\n");
-            break;
-        case sIOtype_CONNECT:
-            USE_SERIAL.printf("[IOc] Connected to url: %s\n", payload);
+void onMessageCallback(websockets::WebsocketsMessage message)
+{
+    Serial.print("Got Message: ");
+    Serial.println(message.data());
+}
 
-            // join default namespace (no auto join in Socket.IO V3)
-            socketIO.send(sIOtype_CONNECT, "/");
-            break;
-        case sIOtype_EVENT:
-            USE_SERIAL.printf("[IOc] get event: %s\n", payload);
-            break;
-        case sIOtype_ACK:
-            USE_SERIAL.printf("[IOc] get ack: %u\n", length);
-            hexdump(payload, length);
-            break;
-        case sIOtype_ERROR:
-            USE_SERIAL.printf("[IOc] get error: %u\n", length);
-            hexdump(payload, length);
-            break;
-        case sIOtype_BINARY_EVENT:
-            USE_SERIAL.printf("[IOc] get binary: %u\n", length);
-            hexdump(payload, length);
-            break;
-        case sIOtype_BINARY_ACK:
-            USE_SERIAL.printf("[IOc] get binary ack: %u\n", length);
-            hexdump(payload, length);
-            break;
+void onEventsCallback(websockets::WebsocketsEvent event, String data)
+{
+    if (event == websockets::WebsocketsEvent::ConnectionOpened)
+    {
+        // Schedule heartbeat
     }
+    else if (event == websockets::WebsocketsEvent::ConnectionClosed)
+    {
+        Serial.println("Connnection Closed");
+    }
+    else if (event == websockets::WebsocketsEvent::GotPing)
+    {
+        Serial.println("Got a Ping!");
+    }
+    else if (event == websockets::WebsocketsEvent::GotPong)
+    {
+        Serial.println("Got a Pong!");
+    }
+}
+
+void sendHeartbeat()
+{
+    // if an encryption key isn't set, request one
+    // otherwise, send a heartbeat
 }
