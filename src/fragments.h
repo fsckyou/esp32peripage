@@ -6,6 +6,7 @@ class Fragments
 {
 public:
    String connect(String bridgeAddr);
+   String heartbeat(String bridgeAddr, String deviceAddr);
 };
 
 #endif

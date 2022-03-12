@@ -78,5 +78,9 @@ void onEventsCallback(websockets::WebsocketsEvent event, String data)
 void sendHeartbeat()
 {
     // if an encryption key isn't set, request one
+    if (enc_key.length() == 0){
+        Sprintln("Asked for encryption key");
+        client.send(Fragments::heartbeat(bridge_addr,DEVICE_ADDR))
+    }
     // otherwise, send a heartbeat
 }
